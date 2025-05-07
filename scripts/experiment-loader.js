@@ -40,24 +40,10 @@ export async function showExperimentationRail(document) {
 
   try {
     const { loadLazy } = await import(
-        // eslint-disable-next-line
+    // eslint-disable-next-line import/no-relative-packages
       '../plugins/experimentation/src/index.js'
     );
     await loadLazy();
-
-    if (document.querySelector('helix-sidekick, aem-sidekick')) {
-      await loadSidekickHandler();
-    } else {
-      await new Promise((resolve) => {
-        document.addEventListener(
-          'sidekick-ready',
-          () => {
-            loadSidekickHandler().then(resolve);
-          },
-          { once: true },
-        );
-      });
-    }
 
     return true;
   } catch (error) {
