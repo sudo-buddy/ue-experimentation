@@ -18,6 +18,7 @@ export async function runExperimentation(document, config) {
 
   try {
     const { loadEager } = await import(
+    // eslint-disable-next-line import/no-relative-packages
       '../plugins/experimentation/src/index.js'
     );
     return loadEager(document, config);
@@ -33,32 +34,17 @@ export async function runExperimentation(document, config) {
  * @param {Document} document The document object.
  * @returns {Promise<void>} A promise that resolves when the experimentation module is loaded.
  */
-export async function showExperimentationRail(document) {
+export async function showExperimentationRail() {
   if (!isExperimentationEnabled()) {
     return null;
   }
 
   try {
     const { loadLazy } = await import(
+    // eslint-disable-next-line import/no-relative-packages
       '../plugins/experimentation/src/index.js'
     );
     await loadLazy();
-
-    const loadSidekickHandler = () => import('../tools/sidekick/aem-experimentation.js');
-
-    if (document.querySelector('helix-sidekick, aem-sidekick')) {
-      await loadSidekickHandler();
-    } else {
-      await new Promise((resolve) => {
-        document.addEventListener(
-          'sidekick-ready',
-          () => {
-            loadSidekickHandler().then(resolve);
-          },
-          { once: true },
-        );
-      });
-    }
 
     return true;
   } catch (error) {

@@ -1019,7 +1019,7 @@ export async function loadLazy(document) {
             lastModified,
             status: response.status,
           },
-          event.origin
+          event.origin,
         );
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -1029,19 +1029,19 @@ export async function loadLazy(document) {
       try {
         if (window.hlx && window.hlx.experiments) {
           // Add section indices to the original experiments
-          window.hlx.experiments.forEach(exp => {
+          window.hlx.experiments.forEach((exp) => {
             if (exp.type === 'section' && exp.el instanceof Element) {
               const allSections = Array.from(
-                document.querySelectorAll('.section, section, [data-section-status]')
+                document.querySelectorAll('.section, section, [data-section-status]'),
               );
               const sectionIndex = allSections.indexOf(exp.el);
-              
+
               // Add sectionIndex directly to the experiment object
               exp.sectionIndex = sectionIndex;
             }
           });
         }
-        
+
         // Now create the serializable clone
         const safeClone = JSON.parse(JSON.stringify(window.hlx));
 
@@ -1051,9 +1051,10 @@ export async function loadLazy(document) {
             config: safeClone,
             source: 'index-js',
           },
-          '*'
+          '*',
         );
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.error('Error sending hlx config:', e);
       }
     }
