@@ -18,6 +18,7 @@ export async function runExperimentation(document, config) {
 
   try {
     const { loadEager } = await import(
+    // eslint-disable-next-line import/no-relative-packages
       '../plugins/experimentation/src/index.js'
     );
     return loadEager(document, config);
@@ -33,7 +34,7 @@ export async function runExperimentation(document, config) {
  * @param {Document} document The document object.
  * @returns {Promise<void>} A promise that resolves when the experimentation module is loaded.
  */
-export async function showExperimentationRail(document) {
+export async function showExperimentationRail() {
   if (!isExperimentationEnabled()) {
     return null;
   }
