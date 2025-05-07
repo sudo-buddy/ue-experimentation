@@ -1,31 +1,15 @@
 import {
   buildBlock,
-  loadHeader,
-  loadFooter,
   decorateButtons,
   decorateIcons,
   decorateSections,
   decorateBlocks,
   decorateTemplateAndTheme,
-  waitForFirstImage,
-  loadSection,
-  loadSections,
-  loadCSS,
+  waitForLCP,
+  loadBlocks,
 } from './aem.js';
 
-import {
-  runExperimentation,
-  showExperimentationRail,
-} from './experiment-loader.js';
-
-const experimentationConfig = {
-  prodHost: 'www.my-site.com',
-  audiences: {
-    mobile: () => window.innerWidth < 600,
-    desktop: () => window.innerWidth >= 600,
-    // define your custom audiences here as needed
-  },
-};
+const LCP_BLOCKS = []; // add your LCP blocks to the list
 
 /**
  * Builds hero block and prepends to main in a new section.
@@ -39,18 +23,6 @@ function buildHeroBlock(main) {
     const section = document.createElement('div');
     section.append(buildBlock('hero', { elems: [picture, h1] }));
     main.prepend(section);
-  }
-}
-
-/**
- * load fonts.css and set a session storage flag
- */
-async function loadFonts() {
-  await loadCSS(`${window.hlx.codeBasePath}/styles/fonts.css`);
-  try {
-    if (!window.location.hostname.includes('localhost')) sessionStorage.setItem('fonts-loaded', 'true');
-  } catch (e) {
-    // do nothing
   }
 }
 
@@ -89,22 +61,19 @@ async function loadEager(doc) {
   document.documentElement.lang = 'en';
   decorateTemplateAndTheme();
 
-  await runExperimentation(doc, experimentationConfig);
+  // Add below snippet early in the eager phase
+  if (document.head.querySelector('[name^="experiment"],[name^="campaign-"],[name^="audience-"]')
+    || [...document.querySelectorAll('.section-metadata div')].some((d) => d.textContent.match(/Experiment|Campaign|Audience/i))) {
+    // eslint-disable-next-line import/no-absolute-path, import/no-unresolved
+    const { loadEager: runEager } = await import('/src/index.js');
+    await runEager(document, { audiences: window.AUDIENCES || {} });
+  }
 
   const main = doc.querySelector('main');
   if (main) {
     decorateMain(main);
     document.body.classList.add('appear');
-    await loadSection(main.querySelector('.section'), waitForFirstImage);
-  }
-
-  try {
-    /* if desktop (proxy for fast connection) or fonts already loaded, load fonts.css */
-    if (window.innerWidth >= 900 || sessionStorage.getItem('fonts-loaded')) {
-      loadFonts();
-    }
-  } catch (e) {
-    // do nothing
+    await waitForLCP(LCP_BLOCKS);
   }
 }
 
@@ -114,19 +83,7 @@ async function loadEager(doc) {
  */
 async function loadLazy(doc) {
   const main = doc.querySelector('main');
-  await loadSections(main);
-
-  const { hash } = window.location;
-  const element = hash ? doc.getElementById(hash.substring(1)) : false;
-  if (hash && element) element.scrollIntoView();
-
-  loadHeader(doc.querySelector('header'));
-  loadFooter(doc.querySelector('footer'));
-
-  loadCSS(`${window.hlx.codeBasePath}/styles/lazy-styles.css`);
-  loadFonts();
-
-  await showExperimentationRail(doc);
+  await loadBlocks(main);
 }
 
 /**
@@ -134,8 +91,6 @@ async function loadLazy(doc) {
  * without impacting the user experience.
  */
 function loadDelayed() {
-  // eslint-disable-next-line import/no-cycle
-  window.setTimeout(() => import('./delayed.js'), 3000);
   // load anything that can be postponed to the latest here
 }
 
