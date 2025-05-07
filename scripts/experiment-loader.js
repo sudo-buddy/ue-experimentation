@@ -40,11 +40,10 @@ export async function showExperimentationRail(document) {
 
   try {
     const { loadLazy } = await import(
+        // eslint-disable-next-line
       '../plugins/experimentation/src/index.js'
     );
     await loadLazy();
-
-    const loadSidekickHandler = () => import('../tools/sidekick/aem-experimentation.js');
 
     if (document.querySelector('helix-sidekick, aem-sidekick')) {
       await loadSidekickHandler();
