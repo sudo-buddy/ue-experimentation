@@ -139,12 +139,7 @@ function setup() {
   const scriptEl = document.querySelector('script[src$="/scripts/scripts.js"]');
   if (scriptEl) {
     try {
-      const scriptURL = new URL(scriptEl.src, window.location);
-      if (scriptURL.host === window.location.host) {
-        [window.hlx.codeBasePath] = scriptURL.pathname.split('/scripts/scripts.js');
-      } else {
-        [window.hlx.codeBasePath] = scriptURL.href.split('/scripts/scripts.js');
-      }
+      [window.hlx.codeBasePath] = new URL(scriptEl.src).pathname.split('/scripts/scripts.js');
     } catch (error) {
       // eslint-disable-next-line no-console
       console.log(error);
@@ -232,7 +227,8 @@ function readBlockConfig(block) {
 
 /**
  * Loads a CSS file.
- * @param {string} href URL to the CSS file
+ * @param {string} href The path to the CSS file
+ * @returns {Promise} A promise that resolves when the CSS is loaded
  */
 async function loadCSS(href) {
   return new Promise((resolve, reject) => {
@@ -373,16 +369,6 @@ function wrapTextNodes(block) {
   const wrap = (el) => {
     const wrapper = document.createElement('p');
     wrapper.append(...el.childNodes);
-    [...el.attributes]
-      // move the instrumentation from the cell to the new paragraph, also keep the class
-      // in case the content is a buttton and the cell the button-container
-      .filter(({ nodeName }) => nodeName === 'class'
-        || nodeName.startsWith('data-aue')
-        || nodeName.startsWith('data-richtext'))
-      .forEach(({ nodeName, nodeValue }) => {
-        wrapper.setAttribute(nodeName, nodeValue);
-        el.removeAttribute(nodeName);
-      });
     el.append(wrapper);
   };
 
@@ -477,14 +463,14 @@ function decorateIcons(element, prefix = '') {
  * @param {Element} main The container element
  */
 function decorateSections(main) {
-  main.querySelectorAll(':scope > div:not([data-section-status])').forEach((section) => {
+  main.querySelectorAll(':scope > div').forEach((section) => {
     const wrappers = [];
     let defaultContent = false;
     [...section.children].forEach((e) => {
-      if ((e.tagName === 'DIV' && e.className) || !defaultContent) {
+      if (e.tagName === 'DIV' || !defaultContent) {
         const wrapper = document.createElement('div');
         wrappers.push(wrapper);
-        defaultContent = e.tagName !== 'DIV' || !e.className;
+        defaultContent = e.tagName !== 'DIV';
         if (defaultContent) wrapper.classList.add('default-content-wrapper');
       }
       wrappers[wrappers.length - 1].append(e);
@@ -583,6 +569,56 @@ function buildBlock(blockName, content) {
 }
 
 /**
+ * Gets the configuration for the given block, and also passes
+ * the config through all custom patching helpers added to the project.
+ *
+ * @param {Element} block The block element
+ * @returns {Object} The block config (blockName, cssPath and jsPath)
+ */
+function getBlockConfig(block) {
+  const { blockName } = block.dataset;
+  const cssPath = `${window.hlx.codeBasePath}/blocks/${blockName}/${blockName}.css`;
+  const jsPath = `${window.hlx.codeBasePath}/blocks/${blockName}/${blockName}.js`;
+  const original = { blockName, cssPath, jsPath };
+  return (window.hlx.patchBlockConfig || [])
+    .filter((fn) => typeof fn === 'function')
+    .reduce(
+      (config, fn) => fn(config, original),
+      { blockName, cssPath, jsPath },
+    );
+}
+
+/**
+ * Loads JS and CSS for a module and executes it's default export.
+ * @param {string} name The module name
+ * @param {string} jsPath The JS file to load
+ * @param {string} [cssPath] An optional CSS file to load
+ * @param {object[]} [args] Parameters to be passed to the default export when it is called
+ */
+async function loadModule(name, jsPath, cssPath, ...args) {
+  const cssLoaded = cssPath ? loadCSS(cssPath) : Promise.resolve();
+  const decorationComplete = jsPath
+    ? new Promise((resolve) => {
+      (async () => {
+        let mod;
+        try {
+          mod = await import(jsPath);
+          if (mod.default) {
+            await mod.default.apply(null, args);
+          }
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.log(`failed to load module for ${name}`, error);
+        }
+        resolve(mod);
+      })();
+    })
+    : Promise.resolve();
+  return Promise.all([cssLoaded, decorationComplete])
+    .then(([, api]) => api);
+}
+
+/**
  * Loads JS and CSS for a block.
  * @param {Element} block The block element
  */
@@ -590,33 +626,15 @@ async function loadBlock(block) {
   const status = block.dataset.blockStatus;
   if (status !== 'loading' && status !== 'loaded') {
     block.dataset.blockStatus = 'loading';
-    const { blockName } = block.dataset;
+    const { blockName, cssPath, jsPath } = getBlockConfig(block);
     try {
-      const cssLoaded = loadCSS(`${window.hlx.codeBasePath}/blocks/${blockName}/${blockName}.css`);
-      const decorationComplete = new Promise((resolve) => {
-        (async () => {
-          try {
-            const mod = await import(
-              `${window.hlx.codeBasePath}/blocks/${blockName}/${blockName}.js`
-            );
-            if (mod.default) {
-              await mod.default(block);
-            }
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.log(`failed to load module for ${blockName}`, error);
-          }
-          resolve();
-        })();
-      });
-      await Promise.all([cssLoaded, decorationComplete]);
+      await loadModule(blockName, jsPath, cssPath, block);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.log(`failed to load block ${blockName}`, error);
     }
     block.dataset.blockStatus = 'loaded';
   }
-  return block;
 }
 
 /**
@@ -625,7 +643,7 @@ async function loadBlock(block) {
  */
 function decorateBlock(block) {
   const shortBlockName = block.classList[0];
-  if (shortBlockName && !block.dataset.blockStatus) {
+  if (shortBlockName) {
     block.classList.add('block');
     block.dataset.blockName = shortBlockName;
     block.dataset.blockStatus = 'initialized';
@@ -634,8 +652,6 @@ function decorateBlock(block) {
     blockWrapper.classList.add(`${shortBlockName}-wrapper`);
     const section = block.closest('.section');
     if (section) section.classList.add(`${shortBlockName}-container`);
-    // eslint-disable-next-line no-use-before-define
-    decorateButtons(block);
   }
 }
 
