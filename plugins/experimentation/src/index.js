@@ -1074,6 +1074,7 @@ export async function loadEager(document, options = {}) {
 }
 
 export async function loadLazy(document) {
+  console.log("i ammmmmmmmmmm xxxxdxxxxxxxxxxx we are here loadLazy");
   // do not show the experimentation pill on prod domains
   if (!isDebugEnabled) {
     return;
