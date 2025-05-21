@@ -1059,6 +1059,7 @@ async function serveAudience(document, pluginOptions) {
 }
 
 export async function loadEager(document, options = {}) {
+  console.log("i ammmmmmmmmmm xxxxdxxxxxxxxxxx we are here loadEager");
   const pluginOptions = { ...DEFAULT_OPTIONS, ...options };
   setDebugMode(window.location, pluginOptions);
 
@@ -1075,11 +1076,6 @@ export async function loadEager(document, options = {}) {
 
 export async function loadLazy(document) {
   console.log("i ammmmmmmmmmm xxxxdxxxxxxxxxxx we are here loadLazy");
-  // do not show the experimentation pill on prod domains
-  if (!isDebugEnabled) {
-    return;
-  }
-
   window.addEventListener("message", async (event) => {
     if (event.data && event.data.type === "hlx:last-modified-request") {
       const { url } = event.data;
