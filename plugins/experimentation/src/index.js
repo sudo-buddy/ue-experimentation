@@ -1072,6 +1072,7 @@ export async function loadEager(document, options = {}) {
   ns.experiment = ns.experiments.find((e) => e.type === "page");
   ns.audience = ns.audiences.find((e) => e.type === "page");
   ns.campaign = ns.campaigns.find((e) => e.type === "page");
+  console.log("i ammmmmmmmmmm xxxxdxxxxxxxxxxx we are done loadEager");
 }
 
 export async function loadLazy(document) {
