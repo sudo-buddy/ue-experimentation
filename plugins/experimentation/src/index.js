@@ -1059,7 +1059,7 @@ async function serveAudience(document, pluginOptions) {
 }
 
 export async function loadEager(document, options = {}) {
-  console.log("i ammmmmmmmmmm xxxxdxxxxxxxxxxx we are here loadEager");
+  console.log("Starting loadEager");
   const pluginOptions = { ...DEFAULT_OPTIONS, ...options };
   setDebugMode(window.location, pluginOptions);
 
@@ -1072,11 +1072,11 @@ export async function loadEager(document, options = {}) {
   ns.experiment = ns.experiments.find((e) => e.type === "page");
   ns.audience = ns.audiences.find((e) => e.type === "page");
   ns.campaign = ns.campaigns.find((e) => e.type === "page");
-  console.log("i ammmmmmmmmmm xxxxdxxxxxxxxxxx we are done loadEager");
+  console.log("Finished loadEager");
 }
 
 export async function loadLazy(document) {
-  console.log("i ammmmmmmmmmm xxxxdxxxxxxxxxxx we are here loadLazy");
+  console.log("Starting loadLazy");
   window.addEventListener("message", async (event) => {
     if (event.data && event.data.type === "hlx:last-modified-request") {
       const { url } = event.data;
@@ -1150,4 +1150,5 @@ export async function loadLazy(document) {
       }
     }
   });
+  console.log("Finished loadLazy");
 }
