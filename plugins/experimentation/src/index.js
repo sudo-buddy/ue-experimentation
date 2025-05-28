@@ -1075,7 +1075,7 @@ export async function loadEager(document, options = {}) {
   console.log("Finished loadEager");
 }
 
-export async function loadLazy(document) {
+export async function loadLazy(document, options = {}) {
   console.log("Starting loadLazy");
   window.addEventListener("message", async (event) => {
     if (event.data && event.data.type === "hlx:last-modified-request") {
@@ -1135,7 +1135,9 @@ export async function loadLazy(document) {
 
         // Now create the serializable clone
         const safeClone = JSON.parse(JSON.stringify(window.hlx));
-
+        if (options.prodHost) {
+          safeClone.prodHost = options.prodHost;
+        }
         event.source.postMessage(
           {
             type: "hlx:experimentation-config",
