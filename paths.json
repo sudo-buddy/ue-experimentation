@@ -1,10 +1,10 @@
 {
   "mappings": [
-    "/content/testeds/:/",
-    "/content/testeds/configuration:/.helix/config.json",
-    "/content/testeds/metadata:/metadata.json"
+    "/content/ue-experimentation/:/",
+    "/content/ue-experimentation/configuration:/.helix/config.json",
+    "/content/ue-experimentation/metadata:/metadata.json"
   ],
   "includes": [
-    "/content/testeds/"
+    "/content/ue-experimentation/"
   ]
 }
