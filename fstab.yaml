@@ -1,5 +1,6 @@
 mountpoints:
   /:
-    url: "https://author-p154780-e1639016.adobeaemcloud.com/bin/franklin.delivery/sudo-buddy/ue-experimentation/main"
+    # url: "https://author-p154780-e1639016.adobeaemcloud.com/bin/franklin.delivery/sudo-buddy/ue-experimentation/main"
+    url: "https://localhost:4502/bin/franklin.delivery/sudo-buddy/ue-experimentation/main"
     type: "markup"
     suffix: ".html"
