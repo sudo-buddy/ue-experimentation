@@ -758,6 +758,7 @@ async function getExperimentConfig(pluginOptions, metadata, overrides) {
     status: metadata.status || 'active',
     audiences,
     endDate,
+    optimizingTarget: metadata.optimizingTarget || 'conversion',
     resolvedAudiences,
     startDate,
     variants,
