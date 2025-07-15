@@ -1063,7 +1063,6 @@ export async function loadEager(document, options = {}) {
 }
 
 export async function loadLazy(document, options = {}) {
-  console.log('Starting loadLazy');
   window.addEventListener('message', async (event) => {
     if (event.data && event.data.type === 'hlx:last-modified-request') {
       const { url } = event.data;
@@ -1097,11 +1096,6 @@ export async function loadLazy(document, options = {}) {
 
       try {
         if (window.hlx && window.hlx.experiments) {
-          console.log(
-            'Current experiments data:',
-            JSON.stringify(window.hlx.experiments, null, 2),
-          );
-
           // Add section indices to the original experiments
           window.hlx.experiments.forEach((exp) => {
             if (exp.type === 'section' && exp.el instanceof Element) {
@@ -1125,6 +1119,9 @@ export async function loadLazy(document, options = {}) {
         if (options.prodHost) {
           safeClone.prodHost = options.prodHost;
         }
+
+        console.log('Sending hlx:experimentation-config event from engine', safeClone);
+        
         event.source.postMessage(
           {
             type: 'hlx:experimentation-config',
