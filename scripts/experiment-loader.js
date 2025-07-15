@@ -44,7 +44,7 @@ export async function showExperimentationRail(document) {
     // eslint-disable-next-line import/no-relative-packages
       '../plugins/experimentation/src/index.js'
     );
-    await loadLazy();
+    await loadLazy(document, config);
 
     const loadSidekickHandler = () => import('../tools/sidekick/aem-experimentation.js');
 

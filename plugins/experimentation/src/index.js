@@ -1121,7 +1121,7 @@ export async function loadLazy(document, options = {}) {
         }
 
         console.log('Sending hlx:experimentation-config event from engine', safeClone);
-        
+
         event.source.postMessage(
           {
             type: 'hlx:experimentation-config',
