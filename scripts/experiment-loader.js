@@ -34,7 +34,7 @@ export async function runExperimentation(document, config) {
  * @param {Document} document The document object.
  * @returns {Promise<void>} A promise that resolves when the experimentation module is loaded.
  */
-export async function showExperimentationRail(document) {
+export async function showExperimentationRail(document, config) {
   if (!isExperimentationEnabled()) {
     return null;
   }
