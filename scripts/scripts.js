@@ -19,7 +19,7 @@ import {
 } from './experiment-loader.js';
 
 const experimentationConfig = {
-  prodHost: 'www.my-site.com',
+  prodHost: 'https://author-p154780-e1639016.adobeaemcloud.com',
   audiences: {
     mobile: () => window.innerWidth < 600,
     desktop: () => window.innerWidth >= 600,
