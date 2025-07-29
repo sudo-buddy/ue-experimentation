@@ -19,7 +19,7 @@ import {
 } from './experiment-loader.js';
 
 const experimentationConfig = {
-  prodHost: 'https://author-p154780-e1639016.adobeaemcloud.com',
+  prodHost: 'www.petplace.com',
   audiences: {
     mobile: () => window.innerWidth < 600,
     desktop: () => window.innerWidth >= 600,
