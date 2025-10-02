@@ -991,15 +991,44 @@ export async function loadEager(document, options = {}) {
   ns.audience = ns.audiences.find((e) => e.type === 'page');
   ns.campaign = ns.campaigns.find((e) => e.type === 'page');
 
+  // triggerEvent support for UE
+  document.addEventListener('hlx:experimentation-get-config', async (event) => {
+    console.log('Engine: Received triggerEvent request for config');
+    
+    try {
+      const config = JSON.parse(JSON.stringify(window.hlx || window.aem || {}));
+      
+      if (pluginOptions?.prodHost) {
+        config.prodHost = pluginOptions.prodHost;
+      }
+      
+      // Send response via postMessage (only reliable cross-iframe method)
+      window.parent.postMessage({
+        type: 'hlx:experimentation-config',
+        config,
+        source: 'engine-trigger-event-response',
+        timestamp: Date.now()
+      }, '*');
+      
+      console.log('Engine: Sent config response for triggerEvent');
+      
+    } catch (error) {
+      console.error('Engine: Error handling triggerEvent request:', error);
+    }
+  });
+
+  // postMessage support
   if (isDebugEnabled) {
     setupCommunicationLayer(pluginOptions);
   }
 }
 
-// Support new Rail UI communication
+// EXISTING: Support legacy postMessage communication
 function setupCommunicationLayer(options) {
   window.addEventListener('message', async (event) => {
     if (event.data?.type === 'hlx:experimentation-get-config') {
+      console.log('🎯 Engine: Received legacy postMessage request for config');
+      
       try {
         const safeClone = JSON.parse(JSON.stringify(window.hlx));
 
@@ -1007,17 +1036,15 @@ function setupCommunicationLayer(options) {
           safeClone.prodHost = options.prodHost;
         }
 
-        event.source.postMessage(
-          {
-            type: 'hlx:experimentation-config',
-            config: safeClone,
-            source: 'index-js',
-          },
-          '*',
-        );
+        event.source.postMessage({
+          type: 'hlx:experimentation-config',
+          config: safeClone,
+          source: 'engine-legacy-response',
+        }, '*');
+        
+        console.log('Engine: Sent config response for legacy postMessage');
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error('Error sending hlx config:', e);
+        console.error('Engine: Error sending legacy config:', e);
       }
     }
   });
