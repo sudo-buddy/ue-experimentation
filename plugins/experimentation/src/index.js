@@ -977,6 +977,33 @@ async function serveAudience(document, pluginOptions) {
   );
 }
 
+// Support legacy postMessage communication
+function setupCommunicationLayer(options) {
+  window.addEventListener('message', async (event) => {
+    if (event.data?.type === 'hlx:experimentation-get-config') {
+      console.log('🎯 Engine: Received legacy postMessage request for config');
+      
+      try {
+        const safeClone = JSON.parse(JSON.stringify(window.hlx));
+
+        if (options.prodHost) {
+          safeClone.prodHost = options.prodHost;
+        }
+
+        event.source.postMessage({
+          type: 'hlx:experimentation-config',
+          config: safeClone,
+          source: 'engine-legacy-response',
+        }, '*');
+        
+        console.log('Engine: Sent config response for legacy postMessage');
+      } catch (e) {
+        console.error('Engine: Error sending legacy config:', e);
+      }
+    }
+  });
+}
+
 export async function loadEager(document, options = {}) {
   const pluginOptions = { ...DEFAULT_OPTIONS, ...options };
   setDebugMode(window.location, pluginOptions);
@@ -1023,32 +1050,6 @@ export async function loadEager(document, options = {}) {
   }
 }
 
-// EXISTING: Support legacy postMessage communication
-function setupCommunicationLayer(options) {
-  window.addEventListener('message', async (event) => {
-    if (event.data?.type === 'hlx:experimentation-get-config') {
-      console.log('🎯 Engine: Received legacy postMessage request for config');
-      
-      try {
-        const safeClone = JSON.parse(JSON.stringify(window.hlx));
-
-        if (options.prodHost) {
-          safeClone.prodHost = options.prodHost;
-        }
-
-        event.source.postMessage({
-          type: 'hlx:experimentation-config',
-          config: safeClone,
-          source: 'engine-legacy-response',
-        }, '*');
-        
-        console.log('Engine: Sent config response for legacy postMessage');
-      } catch (e) {
-        console.error('Engine: Error sending legacy config:', e);
-      }
-    }
-  });
-}
 
 export async function loadLazy(document, options = {}) {
   // do not show the experimentation pill on prod domains
