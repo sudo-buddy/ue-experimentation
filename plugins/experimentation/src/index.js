@@ -994,6 +994,7 @@ function setupCommunicationLayer(options) {
           type: 'hlx:experimentation-config',
           config: safeClone,
           source: 'engine-legacy-response',
+          engineStatus: 'loaded'
         }, '*');
         
         console.log('Engine: Sent config response for legacy postMessage');
@@ -1018,42 +1019,95 @@ export async function loadEager(document, options = {}) {
   ns.audience = ns.audiences.find((e) => e.type === 'page');
   ns.campaign = ns.campaigns.find((e) => e.type === 'page');
 
-  // triggerEvent support for UE
-  document.addEventListener('hlx:experimentation-get-config', async (event) => {
-    console.log('Engine: Received triggerEvent request for config');
-    
-    try {
-      const config = JSON.parse(JSON.stringify(window.hlx || window.aem || {}));
-      
-      if (pluginOptions?.prodHost) {
-        config.prodHost = pluginOptions.prodHost;
-      }
-      
-      // Send response via postMessage (only reliable cross-iframe method)
-      window.parent.postMessage({
-        type: 'hlx:experimentation-config',
-        config,
-        source: 'engine-trigger-event-response',
-        timestamp: Date.now()
-      }, '*');
-      
-      console.log('Engine: Sent config response for triggerEvent');
-      
-    } catch (error) {
-      console.error('Engine: Error handling triggerEvent request:', error);
-    }
-  });
-
-  // postMessage support
   if (isDebugEnabled) {
     setupCommunicationLayer(pluginOptions);
   }
 }
 
+/**
+ * Post-message communication layer for older Universal Editor implementations
+ */
+function setupCommunicationLayer(options) {
+  window.addEventListener('message', async (event) => {
+    if (event.data?.type === 'hlx:experimentation-get-config') {
+      try {
+        const safeClone = JSON.parse(JSON.stringify(window.hlx || window.aem || {}));
+
+        if (options.prodHost) {
+          safeClone.prodHost = options.prodHost;
+        }
+
+        event.source.postMessage({
+          type: 'hlx:experimentation-config',
+          config: safeClone,
+          source: 'engine-post-message-response',
+        }, '*');
+      } catch (error) {
+        console.error('Error handling post-message experimentation request:', error);
+      }
+    }
+  });
+}
 
 export async function loadLazy(document, options = {}) {
   // do not show the experimentation pill on prod domains
   if (!isDebugEnabled) {
     return;
   }
+
+  // window.addEventListener('message', async (event) => {
+  //   if (event.data && event.data.type === 'hlx:last-modified-request') {
+  //     const { url } = event.data;
+
+  //     try {
+  //       const response = await fetch(url, {
+  //         method: 'HEAD',
+  //         cache: 'no-store',
+  //         headers: {
+  //           'Cache-Control': 'no-cache',
+  //         },
+  //       });
+
+  //       const lastModified = response.headers.get('Last-Modified');
+
+  //       event.source.postMessage(
+  //         {
+  //           type: 'hlx:last-modified-response',
+  //           url,
+  //           lastModified,
+  //           status: response.status,
+  //         },
+  //         event.origin,
+  //       );
+  //     } catch (error) {
+  //       // eslint-disable-next-line no-console
+  //       console.error('Error fetching Last-Modified header:', error);
+  //     }
+  //   } else if (event.data?.type === 'hlx:experimentation-get-config') {
+  //     try {
+  //       console.log('getting event', event);
+  //       const safeClone = JSON.parse(JSON.stringify(window.hlx));
+  //       if (options.prodHost) {
+  //         safeClone.prodHost = options.prodHost;
+  //       }
+  //       event.source.postMessage(
+  //         {
+  //           type: 'hlx:experimentation-config',
+  //           config: safeClone,
+  //           source: 'index-js',
+  //         },
+  //         '*',
+  //       );
+  //       console.log('sent event', event);
+  //     } catch (e) {
+  //       // eslint-disable-next-line no-console
+  //       console.error('Error sending hlx config:', e);
+  //     }
+  //   } else if (
+  //     event.data?.type === 'hlx:experimentation-window-reload'
+  //     && event.data?.action === 'reload'
+  //   ) {
+  //     window.location.reload();
+  //   }
+  // });
 }
