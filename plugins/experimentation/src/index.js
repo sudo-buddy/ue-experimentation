@@ -707,7 +707,7 @@ async function getExperimentConfig(pluginOptions, metadata, overrides) {
 
   const config = {
     id,
-    label: `Experiment ${metadata.value || metadata.experiment}`,
+    label: metadata.label || `Experiment ${metadata.value || metadata.experiment}`,
     status: metadata.status || 'active',
     audiences,
     endDate,
@@ -1022,31 +1022,6 @@ export async function loadEager(document, options = {}) {
   if (isDebugEnabled) {
     setupCommunicationLayer(pluginOptions);
   }
-}
-
-/**
- * Post-message communication layer for older Universal Editor implementations
- */
-function setupCommunicationLayer(options) {
-  window.addEventListener('message', async (event) => {
-    if (event.data?.type === 'hlx:experimentation-get-config') {
-      try {
-        const safeClone = JSON.parse(JSON.stringify(window.hlx || window.aem || {}));
-
-        if (options.prodHost) {
-          safeClone.prodHost = options.prodHost;
-        }
-
-        event.source.postMessage({
-          type: 'hlx:experimentation-config',
-          config: safeClone,
-          source: 'engine-post-message-response',
-        }, '*');
-      } catch (error) {
-        console.error('Error handling post-message experimentation request:', error);
-      }
-    }
-  });
 }
 
 export async function loadLazy(document, options = {}) {
